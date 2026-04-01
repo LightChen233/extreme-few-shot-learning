@@ -3,7 +3,7 @@
 # 数据配置
 data:
   train_path: "data/train.csv"
-  task_description: "预测7499铝合金在不同温度和时间下的应变、抗拉强度和屈服强度"
+  task_description: "预测7499铝合金在不同温度和时间下的应变、抗拉强度和屈服强度\n原始样品（凝固而成）的平均材料强度如下：6.94 应变/%；145.83 抗拉强度/Mpa；96.60屈服强度/Mpa"
 
 # 训练配置
 training:
@@ -28,7 +28,7 @@ agents:
 model:
   api_key_env: "sk-KsUlpm2C3vznD43qVesOHPM5TZhyTwSePj2DZZN6e9eZkbgE"
   api_url: "https://api.bltcy.ai/v1/chat/completions"
-  model_name: "gpt-5.4"
+  model_name: "gpt-5.4" # 使用26年最新的GPT-5.4模型
   max_tokens: 2000
 
 # 日志配置

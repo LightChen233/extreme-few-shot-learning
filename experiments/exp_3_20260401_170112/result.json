@@ -1,7 +1,0 @@
-{
-  "iteration": 3,
-  "timestamp": "20260401_170112",
-  "val_loss": 62939.0742,
-  "kept": false,
-  "exp_dir": "experiments/exp_3_20260401_170112"
-}

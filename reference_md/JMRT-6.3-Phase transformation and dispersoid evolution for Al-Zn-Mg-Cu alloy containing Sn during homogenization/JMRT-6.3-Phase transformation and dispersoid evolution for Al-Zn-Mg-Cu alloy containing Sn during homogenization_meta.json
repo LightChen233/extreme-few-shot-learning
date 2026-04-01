@@ -1,0 +1,989 @@
+{
+  "table_of_contents": [
+    {
+      "title": "www.jmrt.com.br\nAvailable online at www.sciencedirect.com",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          169.37109375,
+          58.54199218749999
+        ],
+        [
+          459.22265625,
+          58.54199218749999
+        ],
+        [
+          459.22265625,
+          143.0595703125
+        ],
+        [
+          169.37109375,
+          143.0595703125
+        ]
+      ]
+    },
+    {
+      "title": "Original Article",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          51.509765625,
+          162.4443359375
+        ],
+        [
+          143.28692626953125,
+          162.4443359375
+        ],
+        [
+          143.28692626953125,
+          177.28179931640625
+        ],
+        [
+          51.509765625,
+          177.28179931640625
+        ]
+      ]
+    },
+    {
+      "title": "Phase transformation and dispersoid evolution for\nAl-Zn-Mg-Cu alloy containing Sn during\nhomogenisation",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          51.21875,
+          188.8076171875
+        ],
+        [
+          456.7726135253906,
+          188.8076171875
+        ],
+        [
+          456.7726135253906,
+          249.99346923828125
+        ],
+        [
+          51.21875,
+          249.99346923828125
+        ]
+      ]
+    },
+    {
+      "title": "a r t i c l e i n f o",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          50.927734375,
+          345.2032165527344
+        ],
+        [
+          150.455078125,
+          345.2032165527344
+        ],
+        [
+          150.455078125,
+          354.16961669921875
+        ],
+        [
+          50.927734375,
+          354.16961669921875
+        ]
+      ]
+    },
+    {
+      "title": "a b s t r a c t",
+      "heading_level": null,
+      "page_id": 0,
+      "polygon": [
+        [
+          215.060546875,
+          345.2032165527344
+        ],
+        [
+          284.04473876953125,
+          345.2032165527344
+        ],
+        [
+          284.04473876953125,
+          354.16961669921875
+        ],
+        [
+          215.060546875,
+          354.16961669921875
+        ]
+      ]
+    },
+    {
+      "title": "1. Introduction",
+      "heading_level": null,
+      "page_id": 1,
+      "polygon": [
+        [
+          47.14453125,
+          71.3359375
+        ],
+        [
+          138.32254028320312,
+          71.3359375
+        ],
+        [
+          138.32254028320312,
+          82.5218505859375
+        ],
+        [
+          47.14453125,
+          82.5218505859375
+        ]
+      ]
+    },
+    {
+      "title": "2. Materials and methods",
+      "heading_level": null,
+      "page_id": 1,
+      "polygon": [
+        [
+          304.4103088378906,
+          578.8291015625
+        ],
+        [
+          446.6293029785156,
+          578.8291015625
+        ],
+        [
+          446.6293029785156,
+          590.9544982910156
+        ],
+        [
+          304.4103088378906,
+          590.9544982910156
+        ]
+      ]
+    },
+    {
+      "title": "3. Results and discussion",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          51.98609924316406,
+          335.3564453125
+        ],
+        [
+          193.234375,
+          335.3564453125
+        ],
+        [
+          193.234375,
+          345.714111328125
+        ],
+        [
+          51.98609924316406,
+          345.714111328125
+        ]
+      ]
+    },
+    {
+      "title": "3.1. Microstructure after casting",
+      "heading_level": null,
+      "page_id": 2,
+      "polygon": [
+        [
+          51.509765625,
+          357.0673828125
+        ],
+        [
+          192.63592529296875,
+          357.0673828125
+        ],
+        [
+          192.63592529296875,
+          368.3447265625
+        ],
+        [
+          51.509765625,
+          368.3447265625
+        ]
+      ]
+    },
+    {
+      "title": "3.2. Phase transformations during homogenisation",
+      "heading_level": null,
+      "page_id": 5,
+      "polygon": [
+        [
+          46.5625,
+          693.208251953125
+        ],
+        [
+          260.89471435546875,
+          693.208251953125
+        ],
+        [
+          260.89471435546875,
+          702.1162109375
+        ],
+        [
+          46.5625,
+          702.1162109375
+        ]
+      ]
+    },
+    {
+      "title": "3.3. Intermetallic phase analysis through XRD and\nDSC",
+      "heading_level": null,
+      "page_id": 7,
+      "polygon": [
+        [
+          47.14453125,
+          673.0390625
+        ],
+        [
+          259.82965087890625,
+          673.0390625
+        ],
+        [
+          259.82965087890625,
+          693.7835845947266
+        ],
+        [
+          47.14453125,
+          693.7835845947266
+        ]
+      ]
+    },
+    {
+      "title": "3.4. Effect of homogenisation on dispersoids distribution",
+      "heading_level": null,
+      "page_id": 8,
+      "polygon": [
+        [
+          51.042821158690174,
+          284.1605288007554
+        ],
+        [
+          238.6328125,
+          284.1605288007554
+        ],
+        [
+          238.6328125,
+          303.6543909348442
+        ],
+        [
+          51.042821158690174,
+          303.6543909348442
+        ]
+      ]
+    },
+    {
+      "title": "3.5. Estimation of homogenisation kinetics",
+      "heading_level": null,
+      "page_id": 8,
+      "polygon": [
+        [
+          51.042821158690174,
+          594.3369140625
+        ],
+        [
+          233.44584382871534,
+          594.3369140625
+        ],
+        [
+          233.44584382871534,
+          604.3097261567516
+        ],
+        [
+          51.042821158690174,
+          604.3097261567516
+        ]
+      ]
+    },
+    {
+      "title": "3.6. Development of texture during casting and\nhomogenisation of the alloy",
+      "heading_level": null,
+      "page_id": 10,
+      "polygon": [
+        [
+          51.21875,
+          113.59472656249999
+        ],
+        [
+          251.4375,
+          113.59472656249999
+        ],
+        [
+          251.4375,
+          135.09783935546875
+        ],
+        [
+          51.21875,
+          135.09783935546875
+        ]
+      ]
+    },
+    {
+      "title": "4. Conclusions",
+      "heading_level": null,
+      "page_id": 10,
+      "polygon": [
+        [
+          51.98609924316406,
+          544.7119140625
+        ],
+        [
+          143.470703125,
+          544.7119140625
+        ],
+        [
+          143.470703125,
+          556.5832824707031
+        ],
+        [
+          51.98609924316406,
+          556.5832824707031
+        ]
+      ]
+    },
+    {
+      "title": "Conflicts of interest",
+      "heading_level": null,
+      "page_id": 10,
+      "polygon": [
+        [
+          307.603515625,
+          187.2568359375
+        ],
+        [
+          401.6618347167969,
+          187.2568359375
+        ],
+        [
+          401.6618347167969,
+          198.07232666015625
+        ],
+        [
+          307.603515625,
+          198.07232666015625
+        ]
+      ]
+    },
+    {
+      "title": "Acknowledgment",
+      "heading_level": null,
+      "page_id": 10,
+      "polygon": [
+        [
+          308.767578125,
+          238.43261718749997
+        ],
+        [
+          394.326171875,
+          238.43261718749997
+        ],
+        [
+          394.326171875,
+          250.1546630859375
+        ],
+        [
+          308.767578125,
+          250.1546630859375
+        ]
+      ]
+    },
+    {
+      "title": "r e f e r enc e s",
+      "heading_level": null,
+      "page_id": 10,
+      "polygon": [
+        [
+          308.52398681640625,
+          334.0685119628906
+        ],
+        [
+          371.044921875,
+          334.0685119628906
+        ],
+        [
+          371.044921875,
+          343.034912109375
+        ],
+        [
+          308.52398681640625,
+          343.034912109375
+        ]
+      ]
+    }
+  ],
+  "page_stats": [
+    {
+      "page_id": 0,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          831
+        ],
+        [
+          "Line",
+          50
+        ],
+        [
+          "SectionHeader",
+          5
+        ],
+        [
+          "Text",
+          5
+        ],
+        [
+          "Picture",
+          3
+        ],
+        [
+          "ListItem",
+          3
+        ],
+        [
+          "PageFooter",
+          2
+        ],
+        [
+          "PageHeader",
+          1
+        ],
+        [
+          "Footnote",
+          1
+        ],
+        [
+          "ListGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 1,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          2008
+        ],
+        [
+          "Line",
+          117
+        ],
+        [
+          "TableCell",
+          19
+        ],
+        [
+          "Text",
+          6
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "Table",
+          1
+        ],
+        [
+          "Equation",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 2,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          1097
+        ],
+        [
+          "Line",
+          61
+        ],
+        [
+          "Text",
+          4
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 3,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          89
+        ],
+        [
+          "Line",
+          3
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 4,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          265
+        ],
+        [
+          "Line",
+          15
+        ],
+        [
+          "Text",
+          3
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Equation",
+          1
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 5,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          279
+        ],
+        [
+          "Line",
+          12
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Text",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "SectionHeader",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 6,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          630
+        ],
+        [
+          "Line",
+          29
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Text",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 7,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          843
+        ],
+        [
+          "Line",
+          46
+        ],
+        [
+          "Text",
+          4
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "SectionHeader",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 8,
+      "text_extraction_method": "surya",
+      "block_counts": [
+        [
+          "Line",
+          107
+        ],
+        [
+          "Span",
+          70
+        ],
+        [
+          "Text",
+          12
+        ],
+        [
+          "Equation",
+          8
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "SectionHeader",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 9,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          399
+        ],
+        [
+          "Line",
+          19
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Text",
+          2
+        ],
+        [
+          "Figure",
+          1
+        ],
+        [
+          "Caption",
+          1
+        ],
+        [
+          "FigureGroup",
+          1
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 10,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          1955
+        ],
+        [
+          "Line",
+          113
+        ],
+        [
+          "ListItem",
+          16
+        ],
+        [
+          "SectionHeader",
+          5
+        ],
+        [
+          "Text",
+          4
+        ],
+        [
+          "ListGroup",
+          3
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    },
+    {
+      "page_id": 11,
+      "text_extraction_method": "pdftext",
+      "block_counts": [
+        [
+          "Span",
+          1461
+        ],
+        [
+          "Line",
+          94
+        ],
+        [
+          "ListItem",
+          30
+        ],
+        [
+          "PageHeader",
+          2
+        ],
+        [
+          "ListGroup",
+          2
+        ],
+        [
+          "Reference",
+          1
+        ]
+      ],
+      "block_metadata": {
+        "llm_request_count": 0,
+        "llm_error_count": 0,
+        "llm_tokens_used": 0,
+        "previous_text": "",
+        "previous_type": "",
+        "previous_order": 0
+      }
+    }
+  ],
+  "debug_data_path": "debug_data/JMRT-6.3-Phase transformation and dispersoid evolution for Al-Zn-Mg-Cu alloy containing Sn during homogenization"
+}
