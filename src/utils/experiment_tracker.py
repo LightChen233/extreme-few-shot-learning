@@ -9,7 +9,9 @@ class ExperimentTracker:
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(exist_ok=True)
         self.experiments = []
-        self.exp_id = uuid.uuid4().hex[:8]
+        # 使用时间戳作为前缀
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.exp_id = f"{timestamp}_{uuid.uuid4().hex[:6]}"
 
     def log_experiment(self, iteration, metrics, kept):
         """记录实验（包含多维度指标）"""

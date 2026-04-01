@@ -21,10 +21,29 @@
 
 ## 要求
 设计基于物理机制的动态特征生成方案：
+
+**关键：必须在代码开头定义 DOMAIN_PARAMS 字典，包含从材料科学文献/世界知识中提取的物理常数**
+
+例如：
+```python
+# === 领域知识参数（基于材料科学文献） ===
+DOMAIN_PARAMS = {{
+    'diffusion_activation_energy_J_mol': 65000,  # 铝合金扩散激活能
+    'peak_aging_temp_C': 130,  # 典型峰值时效温度
+    'peak_aging_time_h': 8,  # 典型峰值时效时间
+    'grain_coarsening_threshold_C': 150,  # 晶粒粗化阈值温度
+    'precipitate_dissolution_temp_C': 180,  # 析出相溶解温度
+    # ... 更多物理常数
+}}
+```
+
+然后在 `__init__` 中使用这些参数，而不是硬编码。
+
+其他要求：
 - 条件逻辑处理不同区间
 - 物理约束和阈值
 - 明确的物理/领域意义
 - 不要只列举，要动态推理
-- 给出基于世界知识的参数化结果
+- 基于 DOMAIN_PARAMS 构造特征
 
 直接输出完整代码。

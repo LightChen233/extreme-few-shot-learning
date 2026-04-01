@@ -2,11 +2,14 @@
 反思系统
 """
 from src.utils.llm_agent import LLMAgent
+import json
+from pathlib import Path
 
 class ReflectionAgent:
-    def __init__(self):
+    def __init__(self, exp_dir=None):
         self.llm = LLMAgent()
         self.history = []
+        self.exp_dir = Path(exp_dir) if exp_dir else None
 
     def reflect(self, iteration, metrics_before, metrics_after, code_change, kept):
         with open('prompts/reflection.txt') as f:
@@ -20,7 +23,16 @@ class ReflectionAgent:
         )
 
         reflection = self.llm.call(prompt, max_tokens=500)
-        self.history.append({'iteration': iteration, 'reflection': reflection, 'kept': kept})
+        entry = {'iteration': iteration, 'reflection': reflection, 'kept': kept}
+        self.history.append(entry)
+
+        # 持久化到 exp 文件夹
+        if self.exp_dir:
+            reflection_file = self.exp_dir / 'reflections.jsonl'
+            with open(reflection_file, 'a') as f:
+                json.dump(entry, f, ensure_ascii=False)
+                f.write('\n')
+
         return reflection
 
     def get_context_for_agent(self):

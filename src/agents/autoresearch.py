@@ -33,7 +33,7 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
 
     def run(self, n_iterations=5):
         print("=== 零配置自动研究 ===\n")
-        
+
         # 生成领域知识
         domain_knowledge = self.generate_domain_knowledge()
         print(f"领域知识:\n{domain_knowledge}\n")
@@ -42,12 +42,17 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
         best_metrics = self.run_experiment()
         print(f"[Baseline] {best_metrics}\n")
         self.git_commit(f"baseline: {best_metrics.get('overall_mse', 0):.4f}")
-        self.tracker.log_experiment(0, best_metrics, True)
+        exp_id = self.tracker.log_experiment(0, best_metrics, True)
+
+        # 用 tracker 的 exp 根目录初始化 ReflectionAgent
+        exp_root = self.tracker.log_dir / self.tracker.exp_id
+        exp_root.mkdir(parents=True, exist_ok=True)
+        self.reflector = ReflectionAgent(exp_dir=exp_root)
 
         # 迭代优化
         for i in range(n_iterations):
             print(f"[{i+1}/{n_iterations}]")
-            
+
             # 读取 prompt 模板
             with open('prompts/feature_agent.txt') as f:
                 template = f.read()
@@ -63,7 +68,7 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
                 current_code=code
             )
             new_code = self.call_llm(prompt)
-            
+
             with open('src/models/feature_agent.py', 'w') as f:
                 f.write(new_code)
 
@@ -71,15 +76,16 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
             new_metrics = self.run_experiment()
             print(f"新指标: {new_metrics}")
 
+            kept = new_metrics.get('overall_mse', float('inf')) < best_metrics.get('overall_mse', float('inf'))
+
             # 反思
             reflection = self.reflector.reflect(
-                i+1, best_metrics, new_metrics, "",
-                new_metrics.get('overall_mse', float('inf')) < best_metrics.get('overall_mse', float('inf'))
+                i+1, best_metrics, new_metrics, "", kept
             )
             print(f"反思: {reflection}\n")
 
             # 决策
-            if new_metrics.get('overall_mse', float('inf')) < best_metrics.get('overall_mse', float('inf')):
+            if kept:
                 print("✓ 改进\n")
                 self.git_commit(f"improve: {new_metrics['overall_mse']:.4f}")
                 self.tracker.log_experiment(i+1, new_metrics, True)
