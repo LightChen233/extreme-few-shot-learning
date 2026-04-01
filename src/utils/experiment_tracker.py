@@ -16,7 +16,7 @@ class ExperimentTracker:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         exp_id = f"{self.exp_id}/exp_{iteration}_{timestamp}"
         exp_dir = self.log_dir / exp_id
-        exp_dir.mkdir(exist_ok=True)
+        exp_dir.mkdir(parents=True, exist_ok=True)
 
         # 保存代码
         shutil.copy('train.py', exp_dir / 'train.py')
