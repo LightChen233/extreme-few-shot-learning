@@ -1,0 +1,38 @@
+# AutoResearch 配置文件
+
+# 数据配置
+data:
+  train_path: "data/train.csv"
+  task_description: "预测7499铝合金在不同温度和时间下的应变、抗拉强度和屈服强度"
+
+# 训练配置
+training:
+  time_limit: 300  # 秒
+  n_iterations: 5
+
+# Agent 配置
+agents:
+  feature_agent:
+    enabled: true
+    prompt_file: "prompts/feature_agent.txt"
+
+  program_agent:
+    enabled: true
+    prompt_file: "prompts/program_agent.txt"
+
+  reflection:
+    enabled: true
+    prompt_file: "prompts/reflection.txt"
+
+# 模型配置
+model:
+  api_key_env: "sk-KsUlpm2C3vznD43qVesOHPM5TZhyTwSePj2DZZN6e9eZkbgE"
+  api_url: "https://api.bltcy.ai/v1/chat/completions"
+  model_name: "gpt-5.4"
+  max_tokens: 2000
+
+# 日志配置
+logging:
+  experiment_dir: "experiments"
+  save_code_snapshots: true
+  save_metrics: true

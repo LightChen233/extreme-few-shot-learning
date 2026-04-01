@@ -1,0 +1,30 @@
+[
+  {
+    "iteration": 0,
+    "timestamp": "20260401_164251",
+    "val_loss": 1726.8145,
+    "kept": true,
+    "exp_dir": "experiments/exp_0_20260401_164251"
+  },
+  {
+    "iteration": 1,
+    "timestamp": "20260401_164937",
+    "val_loss": 63485.4922,
+    "kept": false,
+    "exp_dir": "experiments/exp_1_20260401_164937"
+  },
+  {
+    "iteration": 2,
+    "timestamp": "20260401_165520",
+    "val_loss": 2839.1851,
+    "kept": false,
+    "exp_dir": "experiments/exp_2_20260401_165520"
+  },
+  {
+    "iteration": 3,
+    "timestamp": "20260401_170112",
+    "val_loss": 62939.0742,
+    "kept": false,
+    "exp_dir": "experiments/exp_3_20260401_170112"
+  }
+]

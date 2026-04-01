@@ -1,0 +1,21 @@
+# Reflection Prompt
+
+分析这次优化的结果。
+
+## 迭代 {iteration}
+
+### 改动前指标
+{metrics_before}
+
+### 改动后指标
+{metrics_after}
+
+### 结果
+{kept_status}
+
+## 请分析
+1. 哪些维度改进了？哪些变差了？
+2. 为什么会这样？
+3. 下一步应该优化什么？
+
+简洁回答（3-5句话）。
