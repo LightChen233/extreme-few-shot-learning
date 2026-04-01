@@ -19,8 +19,8 @@ class ExperimentTracker:
         exp_dir.mkdir(parents=True, exist_ok=True)
 
         # 保存代码
-        shutil.copy('train.py', exp_dir / 'train.py')
-        shutil.copy('feature_agent.py', exp_dir / 'feature_agent.py')
+        shutil.copy('src/models/train.py', exp_dir / 'train.py')
+        shutil.copy('src/models/feature_agent.py', exp_dir / 'feature_agent.py')
 
         # 保存结果
         result = {
