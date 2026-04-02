@@ -88,3 +88,4 @@ def train_model(time_limit=300):
 if __name__ == '__main__':
     val_loss, model = train_model(time_limit=300)
     torch.save(model.state_dict(), 'model.pt')
+    print("MODEL_SAVED model.pt")

@@ -1,7 +1,9 @@
 """
 零配置框架 - 继承基类
 """
+import shutil
 import pandas as pd
+from pathlib import Path
 from src.agents.base_framework import BaseAutoResearch
 from src.agents.reflection import ReflectionAgent
 
@@ -43,12 +45,28 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
         best_metrics = self.run_experiment()
         print(f"[Baseline] {best_metrics}\n")
         self.git_commit(f"baseline: {best_metrics.get('overall_mse', 0):.4f}")
-        exp_id = self.tracker.log_experiment(0, best_metrics, True)
+        self.tracker.log_experiment(0, best_metrics, True)
 
         # 用 tracker 的 exp 根目录初始化 ReflectionAgent
         exp_root = self.tracker.log_dir / self.tracker.exp_id
         exp_root.mkdir(parents=True, exist_ok=True)
-        self.reflector = ReflectionAgent(exp_dir=exp_root)
+
+        # 传入 API 配置
+        from src.utils.config_loader import Config
+        import os
+        config = Config('config.yaml')
+        api_key = config.get('model.api_key_env')
+        if not api_key.startswith('$') and 'sk-' in api_key:
+            actual_key = api_key
+        else:
+            actual_key = os.environ.get(api_key)
+
+        self.reflector = ReflectionAgent(
+            exp_dir=exp_root,
+            api_key=actual_key,
+            api_url=config.get('model.api_url'),
+            model=config.get('model.model_name')
+        )
 
         # 迭代优化
         for i in range(n_iterations):
@@ -79,6 +97,11 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
 
             kept = new_metrics.get('overall_mse', float('inf')) < best_metrics.get('overall_mse', float('inf'))
 
+            # 立即暂存本次 model.pt（git_revert 会覆盖它）
+            tmp_model = Path('model_tmp.pt')
+            if Path('model.pt').exists():
+                shutil.copy('model.pt', tmp_model)
+
             # 反思
             reflection = self.reflector.reflect(
                 i+1, best_metrics, new_metrics, "", kept
@@ -89,12 +112,16 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
             if kept:
                 print("✓ 改进\n")
                 self.git_commit(f"improve: {new_metrics['overall_mse']:.4f}")
-                self.tracker.log_experiment(i+1, new_metrics, True)
+                self.tracker.log_experiment(i+1, new_metrics, True, model_path=tmp_model, reflection=reflection)
                 best_metrics = new_metrics
             else:
                 print("✗ 回退\n")
+                self.tracker.log_experiment(i+1, new_metrics, False, model_path=tmp_model, reflection=reflection)
                 self.git_revert()
-                self.tracker.log_experiment(i+1, new_metrics, False)
+
+            # 清理临时文件
+            if tmp_model.exists():
+                tmp_model.unlink()
 
         self.tracker.save_summary()
         print(f"=== 最佳: {best_metrics.get('overall_mse', 0):.4f} ===")

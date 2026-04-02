@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 class ReflectionAgent:
-    def __init__(self, exp_dir=None):
-        self.llm = LLMAgent()
+    def __init__(self, exp_dir=None, api_key=None, api_url=None, model=None):
+        self.llm = LLMAgent(api_key=api_key, api_url=api_url, model=model)
         self.history = []
         self.exp_dir = Path(exp_dir) if exp_dir else None
 
