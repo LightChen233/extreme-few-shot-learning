@@ -5,10 +5,37 @@ data:
   train_path: "data/train.csv"
   task_description: "预测7499铝合金在不同温度和时间下的应变、抗拉强度和屈服强度\n原始样品（凝固而成）的平均材料强度如下：6.94 应变/%；145.83 抗拉强度/Mpa；96.60屈服强度/Mpa"
 
+  # 输入特征列（换任务只改这里）
+  input_cols: ["temp", "time"]
+
+  # 输出目标列（顺序必须与 outputs 一致）
+  target_cols: ["strain", "tensile_strength", "yield_strength"]
+
+  # 输出变量元信息（用于格式化报告和 reflection）
+  outputs:
+    - key: strain
+      name: "应变"
+      unit: "%"
+      mse_key: strain_mse
+      mae_key: strain_mae
+      rel_key: strain_rel
+    - key: tensile_strength
+      name: "抗拉强度"
+      unit: "MPa"
+      mse_key: tensile_mse
+      mae_key: tensile_mae
+      rel_key: tensile_rel
+    - key: yield_strength
+      name: "屈服强度"
+      unit: "MPa"
+      mse_key: yield_mse
+      mae_key: yield_mae
+      rel_key: yield_rel
+
 # 训练配置
 training:
   time_limit: 300  # 秒
-  n_iterations: 5
+  n_iterations: 20
 
 # Agent 配置
 agents:

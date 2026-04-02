@@ -23,6 +23,8 @@ class ExperimentTracker:
         # 保存代码
         shutil.copy('src/models/train.py', exp_dir / 'train.py')
         shutil.copy('src/models/feature_agent.py', exp_dir / 'feature_agent.py')
+        if Path('src/models/model_def.py').exists():
+            shutil.copy('src/models/model_def.py', exp_dir / 'model_def.py')
 
         # 保存模型（优先用传入路径，否则用默认路径）
         src_model = Path(model_path) if model_path else Path('model.pt')

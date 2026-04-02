@@ -1,0 +1,18 @@
+{
+  "iteration": 0,
+  "timestamp": "20260402_162907",
+  "kept": true,
+  "metrics": {
+    "overall_mse": 1904.8365,
+    "strain_mse": 26.2929,
+    "tensile_mse": 2434.0188,
+    "yield_mse": 3254.1982,
+    "strain_mae": 3.0599,
+    "tensile_mae": 40.8281,
+    "yield_mae": 46.865,
+    "strain_rel": 0.2116,
+    "tensile_rel": 0.1183,
+    "yield_rel": 0.1791
+  },
+  "exp_dir": "experiments/20260402_162326_412ed5/exp_0_20260402_162907"
+}

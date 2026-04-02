@@ -3,6 +3,7 @@
 """
 import requests
 import os
+import time
 
 class LLMAgent:
     """统一的 LLM 调用"""
@@ -12,8 +13,8 @@ class LLMAgent:
         self.api_url = api_url or "https://api.openai.com/v1/chat/completions"
         self.model = model
 
-    def call(self, prompt, max_tokens=2000):
-        """调用 LLM"""
+    def call(self, prompt, max_tokens=2000, retries=3, retry_delay=10):
+        """调用 LLM，网络错误自动重试"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -25,11 +26,18 @@ class LLMAgent:
             "messages": [{"role": "user", "content": prompt}]
         }
 
-        response = requests.post(self.api_url, headers=headers, json=data)
-        response.raise_for_status()
-
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+        last_err = None
+        for attempt in range(retries):
+            try:
+                response = requests.post(self.api_url, headers=headers, json=data, timeout=120)
+                response.raise_for_status()
+                return response.json()["choices"][0]["message"]["content"]
+            except Exception as e:
+                last_err = e
+                if attempt < retries - 1:
+                    print(f"[LLM] 请求失败 (attempt {attempt+1}/{retries}): {e}. 重试中...", flush=True)
+                    time.sleep(retry_delay)
+        raise last_err
 
     def extract_code(self, text):
         """提取代码块"""

@@ -1,8 +1,8 @@
 # 实验结果不纳入版本控制
-experiments/
+# experiments/
 
 # 进化起点快照（运行时动态生成）
-seed/
+# seed/
 
 # Python
 __pycache__/
@@ -13,3 +13,4 @@ __pycache__/
 # 模型文件
 model.pt
 model_tmp.pt
+*.pt

@@ -10,10 +10,10 @@ from src.agents.reflection import ReflectionAgent
 from src.utils.llm_agent import LLMAgent
 from src.utils.config_loader import Config
 
-# 被优化的目标文件列表
+# 被优化的目标文件列表（LLM 只改这两个）
 MANAGED_FILES = [
     'src/models/feature_agent.py',
-    'src/models/train.py',
+    'src/models/model_def.py',
 ]
 
 class BaseAutoResearch:
@@ -43,11 +43,17 @@ class BaseAutoResearch:
             if 'Val Loss:' in line:
                 metrics['overall_mse'] = float(line.split('Val Loss:')[1].strip())
             elif line.startswith('VAL_PRED'):
-                # 每条样本误差：VAL_PRED temp=X time=Y strain_err=A tensile_err=B yield_err=C
+                # 兼容两种格式：
+                # - strain_err=X tensile_err=Y yield_err=Z
+                # - pred_strain=X true_strain=Y pred_tensile=...
                 entry = {}
                 for token in line.replace('VAL_PRED ', '').split():
-                    k, v = token.split('=')
-                    entry[k] = float(v)
+                    if '=' in token:
+                        k, v = token.split('=', 1)
+                        try:
+                            entry[k] = float(v)
+                        except ValueError:
+                            pass
                 metrics.setdefault('val_errors', []).append(entry)
             elif 'TEST_METRICS' in line:
                 parts = line.replace('TEST_METRICS ', '').split()
@@ -80,4 +86,15 @@ class BaseAutoResearch:
 
     def call_llm(self, prompt, max_tokens=2000):
         response = self.llm.call(prompt, max_tokens)
-        return self.llm.extract_code(response)
+        code = self.llm.extract_code(response)
+        # Basic syntax check — if invalid Python, return empty string so caller can fall back
+        try:
+            compile(code, '<llm_output>', 'exec')
+        except SyntaxError as e:
+            print(f"[Warning] LLM generated invalid Python syntax: {e}. Keeping current code.")
+            return None
+        return code
+
+    def call_llm_text(self, prompt, max_tokens=2000):
+        """调用 LLM 获取纯文本（不做代码语法检查）"""
+        return self.llm.call(prompt, max_tokens)
