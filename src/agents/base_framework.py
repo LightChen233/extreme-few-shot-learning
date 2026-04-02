@@ -2,11 +2,19 @@
 AutoResearch 基类
 """
 import subprocess
+import shutil
 import os
+from pathlib import Path
 from src.utils.experiment_tracker import ExperimentTracker
 from src.agents.reflection import ReflectionAgent
 from src.utils.llm_agent import LLMAgent
 from src.utils.config_loader import Config
+
+# 被优化的目标文件列表
+MANAGED_FILES = [
+    'src/models/feature_agent.py',
+    'src/models/train.py',
+]
 
 class BaseAutoResearch:
     def __init__(self):
@@ -49,12 +57,20 @@ class BaseAutoResearch:
                         metrics[k] = float(v)
         return metrics
 
-    def git_commit(self, msg):
-        subprocess.run(['git', 'add', '.'], capture_output=True)
-        subprocess.run(['git', 'commit', '-m', msg], capture_output=True)
+    def save_snapshot(self, snapshot_dir):
+        """把当前被管理的文件保存到快照目录"""
+        snapshot_dir = Path(snapshot_dir)
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        for f in MANAGED_FILES:
+            shutil.copy(f, snapshot_dir / Path(f).name)
 
-    def git_revert(self):
-        subprocess.run(['git', 'reset', '--hard', 'HEAD~1'], capture_output=True)
+    def restore_snapshot(self, snapshot_dir):
+        """从快照目录恢复被管理的文件"""
+        snapshot_dir = Path(snapshot_dir)
+        for f in MANAGED_FILES:
+            src = snapshot_dir / Path(f).name
+            if src.exists():
+                shutil.copy(src, f)
 
     def call_llm(self, prompt, max_tokens=2000):
         response = self.llm.call(prompt, max_tokens)

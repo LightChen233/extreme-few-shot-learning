@@ -64,7 +64,6 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
         # 基线
         best_metrics = self.run_experiment()
         print(f"[Baseline] {best_metrics}\n")
-        self.git_commit(f"baseline: {best_metrics.get('overall_mse', 0):.4f}")
         self.tracker.log_experiment(0, best_metrics, True)
 
         # 用 tracker 的 exp 根目录初始化 ReflectionAgent（带 API 配置）
@@ -81,6 +80,10 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
             api_url=config.get('model.api_url'),
             model=config.get('model.model_name')
         )
+
+        # 当前最优代码快照（用于回退）
+        best_snapshot = exp_root / '_best_snapshot'
+        self.save_snapshot(best_snapshot)
 
         # 迭代优化
         for i in range(n_iterations):
@@ -127,7 +130,7 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
 
             kept = new_metrics.get('overall_mse', float('inf')) < best_metrics.get('overall_mse', float('inf'))
 
-            # 立即暂存 model.pt（git_revert 前）
+            # 暂存本次 model.pt
             tmp_model = Path('model_tmp.pt')
             if Path('model.pt').exists():
                 shutil.copy('model.pt', tmp_model)
@@ -142,13 +145,13 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
             # 决策
             if kept:
                 print("✓ 改进\n")
-                self.git_commit(f"improve: {new_metrics['overall_mse']:.4f}")
                 self.tracker.log_experiment(i+1, new_metrics, True, model_path=tmp_model, reflection=reflection)
                 best_metrics = new_metrics
+                self.save_snapshot(best_snapshot)   # 更新最优快照
             else:
                 print("✗ 回退\n")
                 self.tracker.log_experiment(i+1, new_metrics, False, model_path=tmp_model, reflection=reflection)
-                self.git_revert()
+                self.restore_snapshot(best_snapshot)  # 恢复最优快照
 
             if tmp_model.exists():
                 tmp_model.unlink()

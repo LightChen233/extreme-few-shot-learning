@@ -1,5 +1,8 @@
-# 实验结果不纳入版本控制，避免 git reset --hard 误删
+# 实验结果不纳入版本控制
 experiments/
+
+# 进化起点快照（运行时动态生成）
+seed/
 
 # Python
 __pycache__/
