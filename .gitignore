@@ -1,0 +1,12 @@
+# 实验结果不纳入版本控制，避免 git reset --hard 误删
+experiments/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# 模型文件
+model.pt
+model_tmp.pt
