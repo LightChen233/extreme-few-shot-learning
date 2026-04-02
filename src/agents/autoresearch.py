@@ -30,11 +30,35 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
         target_cols  = self.target_cols if self.target_cols else df.select_dtypes('number').columns.tolist()
         stats = df.groupby(group_cols)[target_cols].mean().round(1).reset_index().to_string(index=False)
 
+        # 计算各输入维度的单调性方向，明确告知 LLM
+        monotone_lines = ["各输入维度对输出的单调性方向（基于训练集均值）:"]
+        for col in group_cols:
+            other_cols = [c for c in group_cols if c != col]
+            if other_cols:
+                grp = df.groupby(col)[target_cols].mean().round(1)
+            else:
+                grp = df.groupby(col)[target_cols].mean().round(1)
+            for tc in target_cols:
+                vals = grp[tc].values
+                xs = grp.index.values
+                if len(vals) >= 2:
+                    diffs = [vals[i+1] - vals[i] for i in range(len(vals)-1)]
+                    if all(d > 0 for d in diffs):
+                        direction = "单调递增 ↑"
+                    elif all(d < 0 for d in diffs):
+                        direction = "单调递减 ↓"
+                    else:
+                        direction = f"非单调（{', '.join(f'{xs[i]:.0f}→{xs[i+1]:.0f}:{diffs[i]:+.1f}' for i in range(len(diffs)))}）"
+                    monotone_lines.append(f"  {col} → {tc}: {direction}")
+        monotone_summary = "\n".join(monotone_lines)
+
         self.data_summary = f"""
 数据形状: {df.shape}
 列名: {df.columns.tolist()}
 各条件下的平均性能统计 (非常重要，据此推断物理方向):
 {stats}
+
+{monotone_summary}
 """
 
     def generate_domain_knowledge(self):
@@ -63,6 +87,18 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
         train_keys = set(tuple(r) for r in train_df[group_cols].drop_duplicates().values)
 
         lines = ["各验证/测试条件的训练集覆盖情况："]
+
+        # 尝试加载当前 feature_agent 的 physics_baseline，用于诊断验证集外推锚点
+        baseline_fn = None
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("feature_agent_tmp", "src/models/feature_agent.py")
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            baseline_fn = mod.FeatureAgent().physics_baseline
+        except Exception:
+            pass
+
         for label, df in [("Val", val_df), ("Test", test_df)]:
             seen = set()
             for _, row in df[group_cols].drop_duplicates().iterrows():
@@ -71,7 +107,6 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
                     continue
                 seen.add(key)
                 in_train = key in train_keys
-                # 找最近邻（欧氏距离）
                 dists = train_df[group_cols].apply(
                     lambda r: sum((r[c] - row[c])**2 for c in group_cols)**0.5, axis=1
                 )
@@ -79,7 +114,19 @@ class ZeroConfigAutoResearch(BaseAutoResearch):
                 nearest_str = ", ".join(f"{k}={v}" for k, v in nearest.items())
                 status = "✓ 训练集有" if in_train else f"✗ 外推点（最近邻: {nearest_str}）"
                 cond = ", ".join(f"{c}={row[c]}" for c in group_cols)
-                lines.append(f"  [{label}] {cond} → {status}")
+
+                # 仅对验证集外推点附上 physics_baseline 预测，帮助 LLM 诊断锚点
+                # 测试集不附加，避免 LLM 针对测试条件过拟合
+                baseline_str = ""
+                if label == "Val" and not in_train and baseline_fn is not None:
+                    try:
+                        input_vals = [row[c] for c in group_cols]
+                        bs, bt, by = baseline_fn(*input_vals)
+                        baseline_str = f" | physics_baseline: strain={bs:.1f}, tensile={bt:.1f}, yield={by:.1f}"
+                    except Exception:
+                        pass
+
+                lines.append(f"  [{label}] {cond} → {status}{baseline_str}")
 
         return "\n".join(lines)
 

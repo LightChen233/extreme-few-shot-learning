@@ -31,9 +31,10 @@ class ExperimentTracker:
         if src_model.exists():
             shutil.copy(src_model, exp_dir / 'model.pt')
 
-        # 保存测试预测结果
-        if Path('test_predictions.csv').exists():
-            shutil.copy('test_predictions.csv', exp_dir / 'test_predictions.csv')
+        # 保存预测结果
+        for fname in ['train_predictions.csv', 'val_predictions.csv', 'test_predictions.csv']:
+            if Path(fname).exists():
+                shutil.copy(fname, exp_dir / fname)
 
         # 保存 reflection
         if reflection is not None:

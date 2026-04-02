@@ -1,0 +1,104 @@
+{
+  "iteration": 9,
+  "timestamp": "20260402_224313",
+  "kept": false,
+  "metrics": {
+    "overall_mse": 772.8795,
+    "strain_mse": 27.4904,
+    "tensile_mse": 1852.9297,
+    "yield_mse": 438.2185,
+    "strain_mae": 2.8122,
+    "tensile_mae": 28.8981,
+    "yield_mae": 17.4675,
+    "strain_rel": 0.1753,
+    "tensile_rel": 0.0718,
+    "yield_rel": 0.0631,
+    "val_errors": [
+      {
+        "temp": 440.0,
+        "time": 1.0,
+        "strain_err": -0.0668,
+        "tensile_err": -10.2085,
+        "yield_err": -6.2919
+      },
+      {
+        "temp": 440.0,
+        "time": 1.0,
+        "strain_err": -0.1668,
+        "tensile_err": 5.964,
+        "yield_err": -0.2919
+      },
+      {
+        "temp": 440.0,
+        "time": 1.0,
+        "strain_err": 0.0027,
+        "tensile_err": 5.9709,
+        "yield_err": -0.2919
+      },
+      {
+        "temp": 440.0,
+        "time": 1.0,
+        "strain_err": -0.7414,
+        "tensile_err": -14.6611,
+        "yield_err": -9.2919
+      },
+      {
+        "temp": 460.0,
+        "time": 12.0,
+        "strain_err": 0.365,
+        "tensile_err": 20.8258,
+        "yield_err": 22.3969
+      },
+      {
+        "temp": 460.0,
+        "time": 12.0,
+        "strain_err": 2.9708,
+        "tensile_err": 14.3685,
+        "yield_err": -26.6031
+      },
+      {
+        "temp": 470.0,
+        "time": 12.0,
+        "strain_err": 1.7225,
+        "tensile_err": 36.1253,
+        "yield_err": 14.7519
+      },
+      {
+        "temp": 470.0,
+        "time": 12.0,
+        "strain_err": 13.0696,
+        "tensile_err": 78.4226,
+        "yield_err": 24.7519
+      },
+      {
+        "temp": 470.0,
+        "time": 12.0,
+        "strain_err": 11.9986,
+        "tensile_err": 112.5177,
+        "yield_err": 30.7519
+      },
+      {
+        "temp": 440.0,
+        "time": 24.0,
+        "strain_err": 1.0851,
+        "tensile_err": 17.8068,
+        "yield_err": 39.0622
+      },
+      {
+        "temp": 440.0,
+        "time": 24.0,
+        "strain_err": -1.0991,
+        "tensile_err": -27.6999,
+        "yield_err": 16.0622
+      },
+      {
+        "temp": 440.0,
+        "time": 24.0,
+        "strain_err": -0.4578,
+        "tensile_err": -2.2058,
+        "yield_err": 19.0622
+      }
+    ]
+  },
+  "exp_dir": "experiments/20260402_222224_5ff442/exp_9_20260402_224313"
+}

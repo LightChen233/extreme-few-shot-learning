@@ -106,27 +106,58 @@ if __name__ == '__main__':
     torch.save(model.state_dict(), 'model.pt')
     print("MODEL_SAVED model.pt")
 
-    test_df = pd.read_csv('data/test.csv')
-    agent   = FeatureAgent()
-    X_test  = agent.engineer_features(test_df)
-    y_test  = test_df[['strain', 'tensile_strength', 'yield_strength']].values
-    X_test  = torch.FloatTensor(X_test)
+    agent = FeatureAgent()
 
+    # --- train predictions ---
+    train_df = pd.read_csv('data/train.csv')
+    X_train  = torch.FloatTensor(agent.engineer_features(train_df))
+    y_train  = train_df[['strain', 'tensile_strength', 'yield_strength']].values
     model.eval()
     with torch.no_grad():
-        pred = model(X_test).numpy()
+        pred_train = model(X_train).numpy()
+    train_res = train_df[['temp', 'time']].copy()
+    train_res['pred_strain']           = pred_train[:, 0]
+    train_res['pred_tensile_strength'] = pred_train[:, 1]
+    train_res['pred_yield_strength']   = pred_train[:, 2]
+    train_res['true_strain']           = y_train[:, 0]
+    train_res['true_tensile_strength'] = y_train[:, 1]
+    train_res['true_yield_strength']   = y_train[:, 2]
+    train_res.to_csv('train_predictions.csv', index=False)
+    print("TRAIN_PREDICTIONS_SAVED train_predictions.csv")
 
-    # 检查是否坍塌（所有预测几乎相同）
-    pred_std = pred.std(axis=0)
+    # --- val predictions ---
+    val_df  = pd.read_csv('data/val.csv')
+    X_val   = torch.FloatTensor(agent.engineer_features(val_df))
+    y_val   = val_df[['strain', 'tensile_strength', 'yield_strength']].values
+    with torch.no_grad():
+        pred_val = model(X_val).numpy()
+    val_res = val_df[['temp', 'time']].copy()
+    val_res['pred_strain']           = pred_val[:, 0]
+    val_res['pred_tensile_strength'] = pred_val[:, 1]
+    val_res['pred_yield_strength']   = pred_val[:, 2]
+    val_res['true_strain']           = y_val[:, 0]
+    val_res['true_tensile_strength'] = y_val[:, 1]
+    val_res['true_yield_strength']   = y_val[:, 2]
+    val_res.to_csv('val_predictions.csv', index=False)
+    print("VAL_PREDICTIONS_SAVED val_predictions.csv")
+
+    # --- test predictions ---
+    test_df = pd.read_csv('data/test.csv')
+    X_test  = torch.FloatTensor(agent.engineer_features(test_df))
+    y_test  = test_df[['strain', 'tensile_strength', 'yield_strength']].values
+    with torch.no_grad():
+        pred_test = model(X_test).numpy()
+
+    pred_std = pred_test.std(axis=0)
     if pred_std.max() < 1e-3:
         print(f"[Warning] 模型预测坍塌：所有样本预测几乎相同 (std={pred_std})", flush=True)
 
-    result_df = test_df[['temp', 'time']].copy()
-    result_df['pred_strain']  = pred[:, 0]
-    result_df['pred_tensile'] = pred[:, 1]
-    result_df['pred_yield']   = pred[:, 2]
-    result_df['true_strain']  = y_test[:, 0]
-    result_df['true_tensile'] = y_test[:, 1]
-    result_df['true_yield']   = y_test[:, 2]
-    result_df.to_csv('test_predictions.csv', index=False)
+    test_res = test_df[['temp', 'time']].copy()
+    test_res['pred_strain']           = pred_test[:, 0]
+    test_res['pred_tensile_strength'] = pred_test[:, 1]
+    test_res['pred_yield_strength']   = pred_test[:, 2]
+    test_res['true_strain']           = y_test[:, 0]
+    test_res['true_tensile_strength'] = y_test[:, 1]
+    test_res['true_yield_strength']   = y_test[:, 2]
+    test_res.to_csv('test_predictions.csv', index=False)
     print("TEST_PREDICTIONS_SAVED test_predictions.csv")
