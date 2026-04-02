@@ -34,6 +34,15 @@ class ExperimentTracker:
             with open(exp_dir / 'reflection.txt', 'w', encoding='utf-8') as f:
                 f.write(reflection)
 
+        # 测试集推理（用刚保存的 model.pt，不依赖 train.py __main__）
+        model_saved = exp_dir / 'model.pt'
+        if model_saved.exists():
+            try:
+                from src.utils.test_evaluator import evaluate_test_set
+                evaluate_test_set(str(model_saved), exp_dir / 'test_predictions.csv')
+            except Exception as e:
+                print(f"[Warning] 测试集评估失败: {e}")
+
         # 保存结果
         result = {
             'iteration': iteration,

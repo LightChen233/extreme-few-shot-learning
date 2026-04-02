@@ -8,6 +8,11 @@
 ## 当前性能
 验证损失: {val_loss:.4f}
 
+## 各样本预测误差（正值=低估，负值=高估，按总误差降序）
+{val_errors}
+
+重点关注误差最大的工艺条件，思考其背后的物理原因，针对性设计特征。
+
 ## 领域知识
 {domain_knowledge}
 
@@ -20,30 +25,33 @@
 ```
 
 ## 要求
-设计基于物理机制的动态特征生成方案：
 
-**关键：必须在代码开头定义 DOMAIN_PARAMS 字典，包含从材料科学文献/世界知识中提取的物理常数**
-
-例如：
+### 第一步：DOMAIN_PARAMS（基于你的世界知识）
+在代码开头定义，包含你从领域知识中推断的关键物理参数和机制边界，例如：
 ```python
-# === 领域知识参数（基于材料科学文献） ===
 DOMAIN_PARAMS = {{
-    'diffusion_activation_energy_J_mol': 65000,  # 铝合金扩散激活能
-    'peak_aging_temp_C': 130,  # 典型峰值时效温度
-    'peak_aging_time_h': 8,  # 典型峰值时效时间
-    'grain_coarsening_threshold_C': 150,  # 晶粒粗化阈值温度
-    'precipitate_dissolution_temp_C': 180,  # 析出相溶解温度
-    # ... 更多物理常数
+    # 根据你的知识填写，不要硬猜，要有物理依据
+    'key_threshold_1': value,  # 说明物理意义
+    ...
 }}
 ```
 
-然后在 `__init__` 中使用这些参数，而不是硬编码。
+### 第二步：physics_baseline(temp, time)
+实现一个基于世界知识的基线预测函数，返回 (baseline_strain, baseline_tensile, baseline_yield)。
+这个函数应基于已知的物理规律（如 Arrhenius、时效曲线趋势等）给出近似预测。
 
-其他要求：
-- 条件逻辑处理不同区间
-- 物理约束和阈值
-- 明确的物理/领域意义
-- 不要只列举，要动态推理
-- 基于 DOMAIN_PARAMS 构造特征
+```python
+def physics_baseline(self, temp, time):
+    # 基于领域知识的基线估计（不依赖训练数据标签）
+    ...
+    return baseline_strain, baseline_tensile, baseline_yield
+```
+
+### 第三步：engineer_features(df)
+在特征中包含：
+- 相对基线的残差特征（如 `temp_relative_to_regime_boundary`）
+- 物理机制区间检测特征（基于 DOMAIN_PARAMS 中的阈值）
+- 基线预测值本身作为特征（让模型学残差）
+- 其他动态推理特征
 
 直接输出完整代码。

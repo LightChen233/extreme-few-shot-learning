@@ -34,6 +34,13 @@ class BaseAutoResearch:
         for line in result.stdout.split('\n'):
             if 'Val Loss:' in line:
                 metrics['overall_mse'] = float(line.split('Val Loss:')[1].strip())
+            elif line.startswith('VAL_PRED'):
+                # 每条样本误差：VAL_PRED temp=X time=Y strain_err=A tensile_err=B yield_err=C
+                entry = {}
+                for token in line.replace('VAL_PRED ', '').split():
+                    k, v = token.split('=')
+                    entry[k] = float(v)
+                metrics.setdefault('val_errors', []).append(entry)
             elif 'METRICS' in line:
                 parts = line.replace('METRICS ', '').split()
                 for part in parts:

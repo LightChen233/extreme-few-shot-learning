@@ -83,6 +83,17 @@ def train_model(time_limit=300):
     print(f"METRICS strain_mse={strain_mse:.4f} tensile_mse={tensile_mse:.4f} yield_mse={yield_mse:.4f}")
     print(f"METRICS strain_mae={strain_mae:.4f} tensile_mae={tensile_mae:.4f} yield_mae={yield_mae:.4f}")
     print(f"METRICS strain_rel={strain_rel:.4f} tensile_rel={tensile_rel:.4f} yield_rel={yield_rel:.4f}")
+
+    # 每条样本的预测误差（供 LLM 分析哪些条件最难预测）
+    pred_np = pred.numpy()
+    y_np = y_val.numpy()
+    for j in range(len(y_np)):
+        row = val_df.iloc[j]
+        print(f"VAL_PRED temp={row['temp']} time={row['time']} "
+              f"strain_err={y_np[j,0]-pred_np[j,0]:.3f} "
+              f"tensile_err={y_np[j,1]-pred_np[j,1]:.3f} "
+              f"yield_err={y_np[j,2]-pred_np[j,2]:.3f}")
+
     return overall_mse, model
 
 if __name__ == '__main__':
