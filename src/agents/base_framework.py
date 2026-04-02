@@ -49,6 +49,12 @@ class BaseAutoResearch:
                     k, v = token.split('=')
                     entry[k] = float(v)
                 metrics.setdefault('val_errors', []).append(entry)
+            elif 'TEST_METRICS' in line:
+                parts = line.replace('TEST_METRICS ', '').split()
+                for part in parts:
+                    if '=' in part:
+                        k, v = part.split('=')
+                        metrics[f'test_{k}'] = float(v)
             elif 'METRICS' in line:
                 parts = line.replace('METRICS ', '').split()
                 for part in parts:
