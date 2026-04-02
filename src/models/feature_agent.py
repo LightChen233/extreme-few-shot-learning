@@ -1,92 +1,106 @@
 import pandas as pd
 import numpy as np
 
-# === 领域知识参数（基于材料科学文献/工程经验的启发式常数） ===
+# =========================
+# 领域知识参数
+# =========================
+# 说明：
+# 1) 这里的数据温度为 440/460/470°C，明显不是传统 7xxx 人工时效(100~180°C)窗口，
+#    更接近高温均匀化/固溶/高温暴露条件。
+# 2) 在这种高温区，主导机制更可能是：
+#    - 析出相溶解 / 再分配
+#    - 晶界相变化
+#    - 回复与再结晶倾向
+#    - 长时间暴露导致粗化、软化
+# 3) 因此不能沿用低温时效峰值参数，而应围绕“高温暴露剂量 + 阶段转变”构造特征。
 DOMAIN_PARAMS = {
     # 基础物理常数
     'gas_constant_J_molK': 8.314,
 
-    # 7499/7xxx铝合金时效与扩散相关经验参数
-    'diffusion_activation_energy_J_mol': 65000.0,   # 析出/扩散控制过程的经验激活能量级
-    'vacancy_mobility_activation_energy_J_mol': 72000.0,
+    # 对 Al-Zn-Mg-Cu(7xxx) 合金，高温扩散/组织演化的经验激活能量级
+    # 取中等量级，用于构造相对动力学指标，而非严格材料常数
+    'diffusion_activation_energy_J_mol': 115000.0,
+    'recovery_activation_energy_J_mol': 105000.0,
+    'coarsening_activation_energy_J_mol': 125000.0,
 
-    # 典型时效窗口（启发式，不作为严格定律）
-    'peak_aging_temp_C': 130.0,
-    'peak_aging_time_h': 8.0,
-    'under_aging_temp_C': 110.0,
-    'over_aging_temp_C': 150.0,
+    # 当前数据对应的高温区间边界（按样本温度分布和物理机制划分）
+    'regime1_temp_C': 445.0,   # 低高温暴露区：接近 440°C，组织变化相对较弱
+    'regime2_temp_C': 465.0,   # 强演化区：460~470°C 对组织更敏感
+    'solution_like_temp_C': 475.0,  # 接近更强溶解/高温活化边界的软阈值
 
-    # 组织演化阈值
-    'grain_coarsening_threshold_C': 150.0,
-    'precipitate_dissolution_temp_C': 180.0,
-    'recovery_onset_temp_C': 140.0,
+    # 时间边界
+    'short_time_h': 2.0,
+    'medium_time_h': 8.0,
+    'long_time_h': 18.0,
+    'very_long_time_h': 24.0,
 
-    # 时间阈值
-    'short_time_h': 4.0,
-    'medium_time_h': 12.0,
-    'long_time_h': 24.0,
+    # 高温暴露下的组织演化拐点
+    'recovery_onset_temp_C': 430.0,
+    'rapid_softening_temp_C': 460.0,
+    'coarsening_sensitive_temp_C': 455.0,
 
-    # 小样本稳健边界
-    'min_valid_temp_C': 60.0,
-    'max_valid_temp_C': 220.0,
-    'min_valid_time_h': 0.0,
-    'max_valid_time_h': 48.0,
+    # 温度/时间软门控尺度
+    'temp_transition_width_C': 6.0,
+    'time_transition_width_h': 4.0,
+    'log_time_width': 0.55,
 
-    # 峰值区宽度（用于构造软门控）
-    'peak_temp_width_C': 20.0,
-    'peak_log_time_width': 0.8,
-
-    # 原始凝固态样品基准性能
+    # 基准性能：原始凝固样
     'base_strain_pct': 6.94,
     'base_tensile_MPa': 145.83,
     'base_yield_MPa': 96.60,
 
-    # 经验比例系数：用于构造物理启发特征，不代表严格材料常数
-    'softening_temp_scale_C': 25.0,
-    'time_saturation_h': 6.0,
-    'temp_activation_width_C': 10.0,
+    # 高温处理后的经验强化/软化幅值上限
+    # 启发：处理后强度显著高于铸态，但 470°C-12h 误差很大，说明该区有明显机制跃迁
+    'max_strength_increment_MPa': 260.0,
+    'max_yield_increment_MPa': 190.0,
+    'max_strain_increment_pct': 10.0,
+
+    # 竞争机制权重
+    'precipitation_like_weight': 0.75,
+    'solution_recovery_weight': 0.95,
+    'coarsening_weight': 1.05,
+
+    # 稳健边界
+    'min_valid_temp_C': 400.0,
+    'max_valid_temp_C': 520.0,
+    'min_valid_time_h': 0.0,
+    'max_valid_time_h': 48.0,
 }
 
 
 class FeatureAgent:
-    """基于材料热处理机理的动态特征工程"""
+    """基于高温热暴露/组织演化机理的特征工程"""
 
     def __init__(self):
         self.feature_names = []
-
-        # 使用 DOMAIN_PARAMS，避免硬编码
         self.params = DOMAIN_PARAMS
 
-        # 原始态基准
+        self.R = self.params['gas_constant_J_molK']
+        self.Q_diff = self.params['diffusion_activation_energy_J_mol']
+        self.Q_rec = self.params['recovery_activation_energy_J_mol']
+        self.Q_coarse = self.params['coarsening_activation_energy_J_mol']
+
         self.base_strain = self.params['base_strain_pct']
         self.base_tensile = self.params['base_tensile_MPa']
         self.base_yield = self.params['base_yield_MPa']
 
-        # 温度阈值
-        self.low_temp_threshold = self.params['under_aging_temp_C']
-        self.mid_temp_threshold = self.params['peak_aging_temp_C']
-        self.high_temp_threshold = self.params['over_aging_temp_C']
+        self.regime1_temp = self.params['regime1_temp_C']
+        self.regime2_temp = self.params['regime2_temp_C']
+        self.solution_like_temp = self.params['solution_like_temp_C']
+
+        self.short_time = self.params['short_time_h']
+        self.medium_time = self.params['medium_time_h']
+        self.long_time = self.params['long_time_h']
+        self.very_long_time = self.params['very_long_time_h']
+
         self.recovery_onset_temp = self.params['recovery_onset_temp_C']
-        self.coarsening_temp = self.params['grain_coarsening_threshold_C']
-        self.dissolution_temp = self.params['precipitate_dissolution_temp_C']
+        self.rapid_softening_temp = self.params['rapid_softening_temp_C']
+        self.coarsening_sensitive_temp = self.params['coarsening_sensitive_temp_C']
 
-        # 时间阈值
-        self.short_time_threshold = self.params['short_time_h']
-        self.medium_time_threshold = self.params['medium_time_h']
-        self.long_time_threshold = self.params['long_time_h']
+        self.temp_transition_width = self.params['temp_transition_width_C']
+        self.time_transition_width = self.params['time_transition_width_h']
+        self.log_time_width = self.params['log_time_width']
 
-        # 热激活参数
-        self.R = self.params['gas_constant_J_molK']
-        self.Q = self.params['diffusion_activation_energy_J_mol']
-        self.Qv = self.params['vacancy_mobility_activation_energy_J_mol']
-
-        # 峰值窗口
-        self.peak_temp = self.params['peak_aging_temp_C']
-        self.peak_time = self.params['peak_aging_time_h']
-        self.peak_temp_width = self.params['peak_temp_width_C']
-        self.peak_log_time_width = self.params['peak_log_time_width']
-
-        # 稳健边界
         self.min_temp = self.params['min_valid_temp_C']
         self.max_temp = self.params['max_valid_temp_C']
         self.min_time = self.params['min_valid_time_h']
@@ -100,346 +114,347 @@ class FeatureAgent:
         return a / b
 
     def _sigmoid(self, x):
-        return 1.0 / (1.0 + np.exp(-np.clip(x, -50, 50)))
+        return 1.0 / (1.0 + np.exp(-np.clip(x, -60, 60)))
+
+    def _clip_inputs(self, temp, time):
+        temp = np.clip(np.asarray(temp, dtype=float), self.min_temp, self.max_temp)
+        time = np.clip(np.asarray(time, dtype=float), self.min_time, self.max_time)
+        return temp, time
+
+    # =========================
+    # 第二步：physics_baseline(temp, time)
+    # =========================
+    def physics_baseline(self, temp, time):
+        """
+        基于世界知识的近似物理基线：
+        - 高温下组织演化由热激活控制，速率对温度高度敏感
+        - 强度提升来自“高温处理后形成更有利组织状态”的净收益
+        - 但 460~470°C 且中长时，会出现回复/粗化/局部软化竞争
+        - 延性与强度通常竞争，但在明显软化阶段可回升
+
+        返回:
+            baseline_strain, baseline_tensile, baseline_yield
+        """
+        temp, time = self._clip_inputs(temp, time)
+        temp_k = temp + 273.15
+        log_time = self._safe_log(time)
+
+        # 热激活项：用相对量即可
+        diff_rate = np.exp(-self.Q_diff / (self.R * temp_k))
+        rec_rate = np.exp(-self.Q_rec / (self.R * temp_k))
+        coarse_rate = np.exp(-self.Q_coarse / (self.R * temp_k))
+
+        # 归一化到当前窗口，避免数值过小
+        diff_ref = np.exp(-self.Q_diff / (self.R * (460.0 + 273.15)))
+        rec_ref = np.exp(-self.Q_rec / (self.R * (460.0 + 273.15)))
+        coarse_ref = np.exp(-self.Q_coarse / (self.R * (460.0 + 273.15)))
+
+        diff_norm = diff_rate / diff_ref
+        rec_norm = rec_rate / rec_ref
+        coarse_norm = coarse_rate / coarse_ref
+
+        # 高温处理“有效剂量”
+        effective_dose = diff_norm * log_time
+        saturation = 1.0 - np.exp(-np.clip(time, 0, None) / 6.0)
+
+        # 温区机制门控
+        regime1_gate = self._sigmoid((temp - self.regime1_temp) / self.temp_transition_width)
+        regime2_gate = self._sigmoid((temp - self.regime2_temp) / self.temp_transition_width)
+        solution_gate = self._sigmoid((temp - self.solution_like_temp) / self.temp_transition_width)
+
+        # 组织改善项：温度升高 + 时间增加带来更充分组织转变
+        strengthening_progress = (
+            0.55 * saturation
+            + 0.45 * np.tanh(np.clip(effective_dose, 0, None))
+        )
+
+        # 470°C-12h 误差最大，说明该处简单平滑不足，需要强调“中高温+中长时”的跃迁
+        transition_boost = regime2_gate * self._sigmoid((time - 10.0) / 2.5)
+
+        # 软化/回复/粗化项
+        recovery_softening = rec_norm * np.maximum(log_time - np.log1p(4.0), 0.0) * self._sigmoid((temp - self.recovery_onset_temp) / 8.0)
+        coarsening_softening = coarse_norm * np.maximum(log_time - np.log1p(8.0), 0.0) * self._sigmoid((temp - self.coarsening_sensitive_temp) / 6.0)
+        solution_softening = solution_gate * self._sigmoid((time - 6.0) / 2.0)
+
+        net_strength_index = (
+            1.00 * strengthening_progress
+            + 0.35 * transition_boost
+            - 0.30 * recovery_softening
+            - 0.22 * coarsening_softening
+            - 0.12 * solution_softening
+        )
+
+        net_strength_index = np.clip(net_strength_index, -0.2, 1.4)
+
+        # 基线强度：以原始铸态为起点，加上净强化
+        tensile = self.base_tensile + self.params['max_strength_increment_MPa'] * np.clip(net_strength_index, 0, 1.0)
+        yield_strength_factor = (
+            0.70
+            + 0.06 * regime1_gate
+            + 0.05 * regime2_gate
+            - 0.03 * solution_gate
+        )
+        yield_ = self.base_yield + self.params['max_yield_increment_MPa'] * np.clip(net_strength_index * yield_strength_factor, 0, 1.0)
+
+        # 延性：与强化竞争，但高温长时软化可回升
+        ductility_soft_recovery = (
+            0.85 * recovery_softening
+            + 0.70 * coarsening_softening
+            + 0.35 * solution_softening
+        )
+        strain = (
+            self.base_strain
+            + self.params['max_strain_increment_pct'] * (
+                0.85 * transition_boost
+                + 0.45 * regime2_gate
+                + 0.35 * ductility_soft_recovery
+                - 0.28 * np.clip(net_strength_index, 0, 1.0)
+            )
+        )
+
+        # 物理约束
+        yield_ = np.minimum(yield_, tensile - 5.0)
+        tensile = np.maximum(tensile, self.base_tensile)
+        yield_ = np.maximum(yield_, self.base_yield)
+        strain = np.maximum(strain, 0.5)
+
+        return strain, tensile, yield_
 
     def engineer_features(self, df):
-        """构造带物理机制和动态分区逻辑的特征"""
         X = pd.DataFrame(index=df.index)
 
-        # 原始输入
         temp = df['temp'].astype(float).values
         time = df['time'].astype(float).values
+        temp, time = self._clip_inputs(temp, time)
 
-        # 物理上更稳健的裁剪版本
-        clipped_temp = np.clip(temp, self.min_temp, self.max_temp)
-        clipped_time = np.clip(time, self.min_time, self.max_time)
+        temp_k = temp + 273.15
+        log_time = self._safe_log(time)
+        sqrt_time = np.sqrt(np.clip(time, 0, None))
+        inv_temp_k = 1.0 / np.clip(temp_k, 1e-12, None)
 
-        # 基础量
-        temp_k = clipped_temp + 273.15
-        log_time = self._safe_log(clipped_time)
-        sqrt_time = np.sqrt(np.clip(clipped_time, 0, None))
-        inv_temp_k = 1.0 / np.clip(temp_k, 1e-6, None)
-
-        # 峰值参照
-        peak_log_time = np.log1p(self.peak_time)
-
-        # --------------------------------------------------
-        # 1. 基础主特征
-        # --------------------------------------------------
-        X['temp'] = clipped_temp
-        X['time'] = clipped_time
+        # 原始输入
+        X['temp'] = temp
+        X['time'] = time
         X['temp_k'] = temp_k
         X['log_time'] = log_time
         X['sqrt_time'] = sqrt_time
         X['inv_temp_k'] = inv_temp_k
 
-        # --------------------------------------------------
-        # 2. 基础非线性与耦合
-        # --------------------------------------------------
-        X['temp_sq'] = clipped_temp ** 2
-        X['time_sq'] = clipped_time ** 2
+        # 基础非线性
+        X['temp_sq'] = temp ** 2
+        X['time_sq'] = time ** 2
         X['log_time_sq'] = log_time ** 2
-        X['temp_time'] = clipped_temp * clipped_time
-        X['temp_log_time'] = clipped_temp * log_time
-        X['temp_sqrt_time'] = clipped_temp * sqrt_time
-        X['time_over_temp_k'] = self._safe_divide(clipped_time, temp_k)
+        X['temp_time'] = temp * time
+        X['temp_log_time'] = temp * log_time
+        X['temp_sqrt_time'] = temp * sqrt_time
+        X['time_over_temp_k'] = self._safe_divide(time, temp_k)
         X['log_time_over_temp_k'] = self._safe_divide(log_time, temp_k)
-        X['temp_over_log_time1'] = self._safe_divide(clipped_temp, log_time + 1.0)
 
-        # --------------------------------------------------
-        # 3. Arrhenius / 热激活动力学特征
-        # 物理意义：温度升高会指数级加快扩散、析出和粗化过程
-        # --------------------------------------------------
-        arrhenius_diffusion = np.exp(-self.Q / np.clip(self.R * temp_k, 1e-6, None))
-        arrhenius_vacancy = np.exp(-self.Qv / np.clip(self.R * temp_k, 1e-6, None))
+        # Arrhenius 热激活特征
+        arr_diff = np.exp(-self.Q_diff / (self.R * temp_k))
+        arr_rec = np.exp(-self.Q_rec / (self.R * temp_k))
+        arr_coarse = np.exp(-self.Q_coarse / (self.R * temp_k))
 
-        X['arrhenius_diffusion'] = arrhenius_diffusion
-        X['arrhenius_vacancy'] = arrhenius_vacancy
+        ref_diff = np.exp(-self.Q_diff / (self.R * (460.0 + 273.15)))
+        ref_rec = np.exp(-self.Q_rec / (self.R * (460.0 + 273.15)))
+        ref_coarse = np.exp(-self.Q_coarse / (self.R * (460.0 + 273.15)))
 
-        # 热处理剂量：时间 × 热激活
-        thermal_dose = clipped_time * arrhenius_diffusion
-        vacancy_dose = clipped_time * arrhenius_vacancy
+        arr_diff_norm = arr_diff / ref_diff
+        arr_rec_norm = arr_rec / ref_rec
+        arr_coarse_norm = arr_coarse / ref_coarse
 
-        X['thermal_dose'] = thermal_dose
-        X['vacancy_dose'] = vacancy_dose
-        X['log_thermal_dose'] = self._safe_log(thermal_dose)
-        X['log_vacancy_dose'] = self._safe_log(vacancy_dose)
+        X['arr_diff'] = arr_diff
+        X['arr_rec'] = arr_rec
+        X['arr_coarse'] = arr_coarse
+        X['arr_diff_norm'] = arr_diff_norm
+        X['arr_rec_norm'] = arr_rec_norm
+        X['arr_coarse_norm'] = arr_coarse_norm
 
-        # Larson-Miller 风格时间-温度参数（经验化）
-        X['temp_log_time_kelvin'] = temp_k * (20.0 + log_time)
-        X['aging_equivalent_index'] = clipped_temp * log_time
+        X['diffusion_dose'] = time * arr_diff_norm
+        X['recovery_dose'] = time * arr_rec_norm
+        X['coarsening_dose'] = time * arr_coarse_norm
+        X['log_diffusion_dose'] = self._safe_log(X['diffusion_dose'].values)
+        X['log_recovery_dose'] = self._safe_log(X['recovery_dose'].values)
+        X['log_coarsening_dose'] = self._safe_log(X['coarsening_dose'].values)
 
-        # --------------------------------------------------
-        # 4. 机制分区：温度区间
-        # 物理含义：
-        # - 低温：欠时效/扩散受限
-        # - 中温：强化最敏感
-        # - 高温：过时效/粗化风险
-        # - 超高温：析出相溶解或组织异常变化风险
-        # --------------------------------------------------
-        low_temp_mask = (clipped_temp < self.low_temp_threshold).astype(float)
-        peak_temp_mask = ((clipped_temp >= self.low_temp_threshold) & (clipped_temp < self.high_temp_threshold)).astype(float)
-        high_temp_mask = (clipped_temp >= self.high_temp_threshold).astype(float)
-        dissolution_mask = (clipped_temp >= self.dissolution_temp).astype(float)
+        # =========================
+        # 第一步要求：基于 DOMAIN_PARAMS 的机制区间检测
+        # =========================
+        X['is_regime1_or_higher'] = (temp >= self.regime1_temp).astype(float)
+        X['is_regime2_or_higher'] = (temp >= self.regime2_temp).astype(float)
+        X['is_solution_like_temp'] = (temp >= self.solution_like_temp).astype(float)
 
-        X['is_low_temp'] = low_temp_mask
-        X['is_peak_temp_zone'] = peak_temp_mask
-        X['is_high_temp'] = high_temp_mask
-        X['is_dissolution_risk_temp'] = dissolution_mask
+        X['is_short_time'] = (time < self.short_time).astype(float)
+        X['is_medium_time'] = ((time >= self.short_time) & (time < self.medium_time)).astype(float)
+        X['is_long_time'] = ((time >= self.medium_time) & (time < self.long_time)).astype(float)
+        X['is_very_long_time'] = (time >= self.very_long_time).astype(float)
 
-        X['dist_to_underaging_temp'] = clipped_temp - self.low_temp_threshold
-        X['dist_to_peak_temp'] = clipped_temp - self.peak_temp
-        X['dist_to_overaging_temp'] = clipped_temp - self.high_temp_threshold
-        X['relu_above_underaging_temp'] = np.maximum(clipped_temp - self.low_temp_threshold, 0)
-        X['relu_above_peak_temp'] = np.maximum(clipped_temp - self.peak_temp, 0)
-        X['relu_above_overaging_temp'] = np.maximum(clipped_temp - self.high_temp_threshold, 0)
-        X['relu_above_coarsening_temp'] = np.maximum(clipped_temp - self.coarsening_temp, 0)
-        X['relu_above_dissolution_temp'] = np.maximum(clipped_temp - self.dissolution_temp, 0)
-        X['relu_below_peak_temp'] = np.maximum(self.peak_temp - clipped_temp, 0)
+        # 相对边界残差特征
+        X['temp_relative_to_regime1'] = temp - self.regime1_temp
+        X['temp_relative_to_regime2'] = temp - self.regime2_temp
+        X['temp_relative_to_solution_like'] = temp - self.solution_like_temp
 
-        # --------------------------------------------------
-        # 5. 机制分区：时间区间
-        # 物理含义：
-        # - 短时：析出初期
-        # - 中时：接近峰值强化
-        # - 长时：粗化/过时效更明显
-        # --------------------------------------------------
-        short_time_mask = (clipped_time < self.short_time_threshold).astype(float)
-        medium_time_mask = ((clipped_time >= self.short_time_threshold) & (clipped_time < self.medium_time_threshold)).astype(float)
-        long_time_mask = (clipped_time >= self.medium_time_threshold).astype(float)
-        extra_long_time_mask = (clipped_time >= self.long_time_threshold).astype(float)
+        X['time_relative_to_short'] = time - self.short_time
+        X['time_relative_to_medium'] = time - self.medium_time
+        X['time_relative_to_long'] = time - self.long_time
+        X['log_time_relative_to_medium'] = log_time - np.log1p(self.medium_time)
+        X['log_time_relative_to_long'] = log_time - np.log1p(self.long_time)
 
-        X['is_short_time'] = short_time_mask
-        X['is_medium_time'] = medium_time_mask
-        X['is_long_time'] = long_time_mask
-        X['is_extra_long_time'] = extra_long_time_mask
+        X['relu_above_regime1'] = np.maximum(temp - self.regime1_temp, 0)
+        X['relu_above_regime2'] = np.maximum(temp - self.regime2_temp, 0)
+        X['relu_above_solution_like'] = np.maximum(temp - self.solution_like_temp, 0)
 
-        X['dist_to_peak_time_log'] = log_time - peak_log_time
-        X['relu_above_short_time'] = np.maximum(clipped_time - self.short_time_threshold, 0)
-        X['relu_above_medium_time'] = np.maximum(clipped_time - self.medium_time_threshold, 0)
-        X['relu_above_long_time'] = np.maximum(clipped_time - self.long_time_threshold, 0)
-        X['relu_below_short_time'] = np.maximum(self.short_time_threshold - clipped_time, 0)
+        X['relu_above_short_time'] = np.maximum(time - self.short_time, 0)
+        X['relu_above_medium_time'] = np.maximum(time - self.medium_time, 0)
+        X['relu_above_long_time'] = np.maximum(time - self.long_time, 0)
+        X['relu_above_very_long_time'] = np.maximum(time - self.very_long_time, 0)
 
-        # --------------------------------------------------
-        # 6. 峰值时效邻近度：软门控而非硬编码
-        # 物理意义：强度往往在某一温-时窗口附近达到峰值
-        # --------------------------------------------------
-        temp_peak_proximity = -((clipped_temp - self.peak_temp) / self.peak_temp_width) ** 2
-        time_peak_proximity = -((log_time - peak_log_time) / self.peak_log_time_width) ** 2
-        joint_peak_proximity = temp_peak_proximity + time_peak_proximity
-        peak_window = np.exp(joint_peak_proximity)
+        # 软门控特征
+        regime1_gate = self._sigmoid((temp - self.regime1_temp) / self.temp_transition_width)
+        regime2_gate = self._sigmoid((temp - self.regime2_temp) / self.temp_transition_width)
+        solution_gate = self._sigmoid((temp - self.solution_like_temp) / self.temp_transition_width)
 
-        X['temp_peak_proximity'] = temp_peak_proximity
-        X['time_peak_proximity'] = time_peak_proximity
-        X['joint_peak_proximity'] = joint_peak_proximity
-        X['peak_window'] = peak_window
+        short_to_medium_gate = self._sigmoid((time - self.short_time) / self.time_transition_width)
+        medium_to_long_gate = self._sigmoid((time - self.medium_time) / self.time_transition_width)
+        long_to_verylong_gate = self._sigmoid((time - self.long_time) / self.time_transition_width)
 
-        # --------------------------------------------------
-        # 7. 动态强化驱动力：分区推理
-        # 逻辑：
-        # - 低温：强化受扩散限制，随时间慢速提升
-        # - 峰值区：温度和时间耦合最有利
-        # - 高温：前期快速强化，后期转向粗化和软化
-        # --------------------------------------------------
-        precipitation_drive = np.zeros_like(clipped_temp, dtype=float)
+        X['regime1_gate'] = regime1_gate
+        X['regime2_gate'] = regime2_gate
+        X['solution_gate'] = solution_gate
+        X['short_to_medium_gate'] = short_to_medium_gate
+        X['medium_to_long_gate'] = medium_to_long_gate
+        X['long_to_verylong_gate'] = long_to_verylong_gate
 
-        low_idx = clipped_temp < self.low_temp_threshold
-        precipitation_drive[low_idx] = (
-            0.55 * log_time[low_idx]
-            + 0.004 * (clipped_temp[low_idx] - self.min_temp) * log_time[low_idx]
+        # =========================
+        # 第三步：基线预测值本身作为特征
+        # =========================
+        baseline_strain, baseline_tensile, baseline_yield = self.physics_baseline(temp, time)
+        X['baseline_strain'] = baseline_strain
+        X['baseline_tensile'] = baseline_tensile
+        X['baseline_yield'] = baseline_yield
+
+        # 基线导出的状态量
+        X['baseline_yield_tensile_ratio'] = self._safe_divide(baseline_yield, baseline_tensile)
+        X['baseline_strength_sum'] = baseline_tensile + baseline_yield
+        X['baseline_strength_minus_base_tensile'] = baseline_tensile - self.base_tensile
+        X['baseline_yield_minus_base_yield'] = baseline_yield - self.base_yield
+        X['baseline_strain_minus_base_strain'] = baseline_strain - self.base_strain
+
+        # “相对基线”的输入偏移特征：让模型学习残差
+        X['temp_times_baseline_tensile'] = temp * baseline_tensile
+        X['time_times_baseline_tensile'] = time * baseline_tensile
+        X['temp_times_baseline_yield'] = temp * baseline_yield
+        X['time_times_baseline_yield'] = time * baseline_yield
+        X['temp_times_baseline_strain'] = temp * baseline_strain
+        X['log_time_times_baseline_tensile'] = log_time * baseline_tensile
+        X['log_time_times_baseline_yield'] = log_time * baseline_yield
+        X['log_time_times_baseline_strain'] = log_time * baseline_strain
+
+        # 基线相对机制边界的修正项
+        X['baseline_tensile_x_regime2'] = baseline_tensile * regime2_gate
+        X['baseline_yield_x_regime2'] = baseline_yield * regime2_gate
+        X['baseline_strain_x_regime2'] = baseline_strain * regime2_gate
+
+        X['baseline_tensile_x_longtime'] = baseline_tensile * medium_to_long_gate
+        X['baseline_yield_x_longtime'] = baseline_yield * medium_to_long_gate
+        X['baseline_strain_x_longtime'] = baseline_strain * medium_to_long_gate
+
+        # =========================
+        # 重点针对最大误差区：470°C, 12h
+        # 该区域可能存在机制跃迁，需显式构造邻域与风险特征
+        # =========================
+        target_temp = 470.0
+        target_time = 12.0
+        temp_prox_470 = np.exp(-((temp - target_temp) / 6.0) ** 2)
+        time_prox_12 = np.exp(-((log_time - np.log1p(target_time)) / 0.35) ** 2)
+        joint_prox_470_12 = temp_prox_470 * time_prox_12
+
+        X['temp_prox_470'] = temp_prox_470
+        X['time_prox_12h'] = time_prox_12
+        X['joint_prox_470_12'] = joint_prox_470_12
+
+        # 中高温-中长时组织跃迁
+        X['transition_risk_460_470_midtime'] = (
+            regime2_gate
+            * self._sigmoid((time - 9.0) / 2.0)
+            * (1.0 - self._sigmoid((time - 20.0) / 3.0))
         )
 
-        peak_idx = (clipped_temp >= self.low_temp_threshold) & (clipped_temp < self.high_temp_threshold)
-        precipitation_drive[peak_idx] = (
-            1.10 * log_time[peak_idx]
-            + 0.010 * (clipped_temp[peak_idx] - self.low_temp_threshold) * log_time[peak_idx]
-            - 0.045 * np.maximum(clipped_time[peak_idx] - self.medium_time_threshold, 0)
+        # 高温长时软化/粗化
+        recovery_drive = arr_rec_norm * np.maximum(log_time - np.log1p(2.0), 0.0) * self._sigmoid((temp - self.recovery_onset_temp) / 8.0)
+        coarsening_drive = arr_coarse_norm * np.maximum(log_time - np.log1p(6.0), 0.0) * self._sigmoid((temp - self.coarsening_sensitive_temp) / 6.0)
+        solution_drive = solution_gate * short_to_medium_gate
+
+        strengthening_drive = (
+            self.params['precipitation_like_weight']
+            * (1.0 - np.exp(-time / 6.0))
+            * (0.55 + 0.45 * regime1_gate)
+            * (0.75 + 0.25 * arr_diff_norm)
         )
-
-        high_idx = clipped_temp >= self.high_temp_threshold
-        precipitation_drive[high_idx] = (
-            0.95 * np.minimum(log_time[high_idx], np.log1p(self.medium_time_threshold))
-            + 0.20
-            - 0.12 * np.maximum(log_time[high_idx] - np.log1p(self.short_time_threshold), 0)
-        )
-
-        X['precipitation_drive'] = precipitation_drive
-
-        # --------------------------------------------------
-        # 8. 软化/粗化/回复驱动力
-        # 物理意义：高温长时促进析出相粗化、位错回复，导致强度回落
-        # --------------------------------------------------
-        recovery_drive = (
-            np.maximum(clipped_temp - self.recovery_onset_temp, 0) / 20.0
-        ) * log_time
-
-        coarsening_drive = (
-            np.maximum(clipped_temp - self.coarsening_temp, 0) / self.params['softening_temp_scale_C']
-        ) * np.maximum(log_time - np.log1p(self.short_time_threshold), 0)
-
-        dissolution_drive = (
-            np.maximum(clipped_temp - self.dissolution_temp, 0) / 15.0
-        ) * self._sigmoid(clipped_time - self.short_time_threshold)
 
         softening_drive = (
-            0.7 * recovery_drive
-            + 1.0 * coarsening_drive
-            + 1.2 * dissolution_drive
-            + 0.03 * np.maximum(clipped_time - self.medium_time_threshold, 0) * high_temp_mask
+            self.params['solution_recovery_weight'] * recovery_drive
+            + self.params['coarsening_weight'] * coarsening_drive
+            + 0.45 * solution_drive
         )
 
+        net_drive = strengthening_drive - softening_drive
+
+        X['strengthening_drive'] = strengthening_drive
         X['recovery_drive'] = recovery_drive
         X['coarsening_drive'] = coarsening_drive
-        X['dissolution_drive'] = dissolution_drive
+        X['solution_drive'] = solution_drive
         X['softening_drive'] = softening_drive
+        X['net_drive'] = net_drive
 
-        # 净强化
-        net_strengthening = precipitation_drive - softening_drive
-        X['net_strengthening_index'] = net_strengthening
+        # 动态推理特征
+        X['under_processed_tendency'] = (1.0 - regime1_gate) * (1.0 - short_to_medium_gate)
+        X['transition_tendency'] = regime2_gate * medium_to_long_gate * (1.0 - long_to_verylong_gate)
+        X['overexposure_tendency'] = regime2_gate * long_to_verylong_gate * self._sigmoid((temp - 465.0) / 4.0)
 
-        # --------------------------------------------------
-        # 9. 工艺状态动态推理特征
-        # 目的：不是单纯堆交叉项，而是表达“当前处于何种组织演化阶段”
-        # --------------------------------------------------
-        # 欠时效倾向：低温或短时更强
-        underaging_tendency = (
-            low_temp_mask * (1.0 + 0.5 * short_time_mask)
-            + self._sigmoid((self.peak_temp - clipped_temp) / 10.0) * self._sigmoid((peak_log_time - log_time) / 0.5)
+        X['strength_ductility_tradeoff_index'] = net_drive - 0.35 * solution_drive + 0.20 * coarsening_drive
+        X['yield_tensile_coupling_index'] = baseline_yield / np.maximum(baseline_tensile, 1e-6) + 0.15 * net_drive
+        X['ductility_recovery_index'] = 0.55 * softening_drive + 0.20 * regime2_gate - 0.18 * strengthening_drive
+
+        # 分区交互
+        X['temp_in_regime1'] = temp * ((temp >= self.regime1_temp) & (temp < self.regime2_temp)).astype(float)
+        X['temp_in_regime2'] = temp * (temp >= self.regime2_temp).astype(float)
+        X['log_time_in_regime1'] = log_time * ((temp >= self.regime1_temp) & (temp < self.regime2_temp)).astype(float)
+        X['log_time_in_regime2'] = log_time * (temp >= self.regime2_temp).astype(float)
+
+        X['temp_log_time_regime1'] = temp * log_time * ((temp >= self.regime1_temp) & (temp < self.regime2_temp)).astype(float)
+        X['temp_log_time_regime2'] = temp * log_time * (temp >= self.regime2_temp).astype(float)
+
+        # 等效暴露参数
+        X['larson_miller_like'] = temp_k * (20.0 + log_time)
+        X['equivalent_exposure_index'] = temp * log_time
+        X['high_temp_exposure_index'] = np.maximum(temp - 440.0, 0) * log_time
+        X['high_temp_long_time_penalty'] = np.maximum(temp - 460.0, 0) * np.maximum(time - 8.0, 0)
+        X['470_12_penalty_like'] = np.maximum(temp - 465.0, 0) * np.maximum(time - 10.0, 0)
+
+        # 相对原始样品的潜力
+        X['base_strength_sum'] = self.base_tensile + self.base_yield
+        X['base_strength_ratio'] = self.base_yield / self.base_tensile
+        X['process_strength_potential'] = (
+            0.55 * strengthening_drive
+            + 0.25 * joint_prox_470_12
+            + 0.20 * regime2_gate
+            - 0.30 * softening_drive
+        )
+        X['process_ductility_potential'] = (
+            0.40 * regime2_gate
+            + 0.35 * solution_drive
+            + 0.30 * coarsening_drive
+            - 0.20 * strengthening_drive
         )
 
-        # 峰值强化倾向：接近峰值窗口且净强化为正
-        peak_strength_tendency = peak_window * self._sigmoid(net_strengthening)
+        # 基线残差学习辅助特征（输入相对于典型机制点）
+        X['temp_residual_to_470'] = temp - 470.0
+        X['time_residual_to_12'] = time - 12.0
+        X['log_time_residual_to_12'] = log_time - np.log1p(12.0)
+        X['temp_time_residual_product_470_12'] = (temp - 470.0) * (time - 12.0)
 
-        # 过时效倾向：高温、长时、粗化驱动上升
-        overaging_tendency = self._sigmoid(
-            0.8 * (clipped_temp - self.high_temp_threshold) / 10.0
-            + 1.2 * (log_time - np.log1p(self.medium_time_threshold))
-            + coarsening_drive
-        )
-
-        X['underaging_tendency'] = underaging_tendency
-        X['peak_strength_tendency'] = peak_strength_tendency
-        X['overaging_tendency'] = overaging_tendency
-
-        # --------------------------------------------------
-        # 10. 温-时耦合机制特征
-        # 物理含义：高温短时和低温长时可能达到近似组织状态
-        # --------------------------------------------------
-        X['equivalent_aging_index'] = clipped_temp * log_time
-        X['diffusion_weighted_time'] = clipped_time * np.exp(-(self.peak_temp - clipped_temp) / 30.0)
-        X['high_temp_short_time_equiv'] = high_temp_mask * self._safe_divide(clipped_temp, log_time + 1.0)
-        X['low_temp_long_time_equiv'] = low_temp_mask * clipped_temp * log_time
-        X['temp_time_compensation'] = self._safe_divide(log_time, inv_temp_k * 1000.0 + 1e-6)
-
-        # 分区斜率特征
-        X['temp_in_low_zone'] = clipped_temp * low_temp_mask
-        X['temp_in_peak_zone'] = clipped_temp * peak_temp_mask
-        X['temp_in_high_zone'] = clipped_temp * high_temp_mask
-
-        X['log_time_in_low_zone'] = log_time * low_temp_mask
-        X['log_time_in_peak_zone'] = log_time * peak_temp_mask
-        X['log_time_in_high_zone'] = log_time * high_temp_mask
-
-        X['temp_log_time_low_zone'] = clipped_temp * log_time * low_temp_mask
-        X['temp_log_time_peak_zone'] = clipped_temp * log_time * peak_temp_mask
-        X['temp_log_time_high_zone'] = clipped_temp * log_time * high_temp_mask
-
-        # --------------------------------------------------
-        # 11. 饱和/激活特征
-        # 物理意义：析出强化通常前期增长快，后期趋于饱和
-        # --------------------------------------------------
-        time_saturation = 1.0 - np.exp(-clipped_time / self.params['time_saturation_h'])
-        temp_activation = self._sigmoid((clipped_temp - self.low_temp_threshold) / self.params['temp_activation_width_C'])
-        peak_temp_activation = np.exp(-((clipped_temp - self.peak_temp) / 18.0) ** 2)
-
-        X['time_saturation'] = time_saturation
-        X['temp_activation'] = temp_activation
-        X['peak_temp_activation'] = peak_temp_activation
-        X['combined_activation'] = time_saturation * temp_activation
-        X['peak_zone_activation'] = time_saturation * peak_temp_activation
-
-        # --------------------------------------------------
-        # 12. 强塑性竞争特征
-        # 物理意义：强度与延性常有竞争，过时效可使延性回升
-        # --------------------------------------------------
-        ductility_recovery = (
-            0.55 * softening_drive
-            + 0.20 * high_temp_mask
-            + 0.20 * long_time_mask
-            - 0.25 * precipitation_drive
-        )
-
-        strength_ductility_tradeoff = net_strengthening - ductility_recovery
-
-        X['ductility_recovery_index'] = ductility_recovery
-        X['strength_ductility_tradeoff'] = strength_ductility_tradeoff
-
-        # --------------------------------------------------
-        # 13. 风险与约束特征
-        # 物理意义：对外推区域进行物理约束，增强小样本稳定性
-        # --------------------------------------------------
-        high_temp_long_time_penalty = (
-            np.maximum(clipped_temp - self.high_temp_threshold, 0)
-            * np.maximum(clipped_time - self.short_time_threshold, 0)
-        )
-
-        dissolution_penalty = (
-            np.maximum(clipped_temp - self.dissolution_temp, 0)
-            * np.maximum(clipped_time - self.short_time_threshold, 0)
-        )
-
-        X['high_temp_long_time_penalty'] = high_temp_long_time_penalty
-        X['dissolution_penalty'] = dissolution_penalty
-        X['instability_index'] = (
-            0.6 * high_temp_long_time_penalty / 100.0
-            + 0.8 * dissolution_penalty / 100.0
-        )
-
-        # --------------------------------------------------
-        # 14. 基于原始凝固态的相对工艺潜力特征
-        # 不使用标签泄漏，仅利用已知常数
-        # --------------------------------------------------
-        base_strength_sum = self.base_tensile + self.base_yield
-        base_strength_ratio = self._safe_divide(self.base_yield, self.base_tensile)
-
-        X['base_strength_sum'] = base_strength_sum
-        X['base_strength_ratio'] = base_strength_ratio
-
-        X['process_to_base_potential'] = (
-            0.8 * peak_strength_tendency
-            + 0.5 * net_strengthening
-            + 0.3 * X['combined_activation'].values
-            - 0.3 * X['instability_index'].values
-        )
-
-        X['base_relative_strengthening'] = self._safe_divide(
-            X['process_to_base_potential'].values, base_strength_sum
-        )
-
-        # --------------------------------------------------
-        # 15. 输出相关的通用状态表征特征
-        # 目的：帮助模型同时学习 tensile / yield / strain 的共同组织基础
-        # --------------------------------------------------
-        X['strength_state_index'] = (
-            0.9 * net_strengthening
-            + 0.6 * peak_window
-            - 0.5 * overaging_tendency
-        )
-
-        X['ductility_state_index'] = (
-            0.8 * ductility_recovery
-            + 0.4 * overaging_tendency
-            - 0.3 * peak_strength_tendency
-        )
-
-        X['yield_tensile_coupling_index'] = (
-            X['strength_state_index'].values
-            * (1.0 + 0.2 * peak_temp_mask - 0.1 * dissolution_mask)
-        )
-
-        # --------------------------------------------------
-        # 16. 最终稳健处理
-        # --------------------------------------------------
+        # 稳健清洗
         X = X.replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
         self.feature_names = X.columns.tolist()
@@ -456,3 +471,13 @@ if __name__ == '__main__':
     print("Features:")
     print(agent.get_feature_names())
     print(f"Shape: {X.shape}")
+
+    # 示例：物理基线输出
+    bs, bt, by = agent.physics_baseline(
+        train['temp'].values[:5],
+        train['time'].values[:5]
+    )
+    print("Physics baseline sample:")
+    print("strain:", bs)
+    print("tensile:", bt)
+    print("yield:", by)
