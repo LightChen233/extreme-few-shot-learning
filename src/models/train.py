@@ -89,3 +89,27 @@ if __name__ == '__main__':
     val_loss, model = train_model(time_limit=300)
     torch.save(model.state_dict(), 'model.pt')
     print("MODEL_SAVED model.pt")
+
+    # 测试集评估
+    test_df = pd.read_csv('data/test.csv')
+    agent = FeatureAgent()
+    X_test = agent.engineer_features(test_df)
+    y_test = test_df[['strain', 'tensile_strength', 'yield_strength']].values
+
+    X_test = torch.FloatTensor(X_test)
+    y_test = torch.FloatTensor(y_test)
+
+    model.eval()
+    with torch.no_grad():
+        pred = model(X_test).numpy()
+
+    # 保存预测结果
+    result_df = test_df[['temp', 'time']].copy()
+    result_df['pred_strain'] = pred[:, 0]
+    result_df['pred_tensile'] = pred[:, 1]
+    result_df['pred_yield'] = pred[:, 2]
+    result_df['true_strain'] = y_test[:, 0]
+    result_df['true_tensile'] = y_test[:, 1]
+    result_df['true_yield'] = y_test[:, 2]
+    result_df.to_csv('test_predictions.csv', index=False)
+    print("TEST_PREDICTIONS_SAVED test_predictions.csv")

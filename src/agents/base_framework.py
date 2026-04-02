@@ -34,6 +34,12 @@ class BaseAutoResearch:
         for line in result.stdout.split('\n'):
             if 'Val Loss:' in line:
                 metrics['overall_mse'] = float(line.split('Val Loss:')[1].strip())
+            elif 'TEST_METRICS' in line:
+                parts = line.replace('TEST_METRICS ', '').split()
+                for part in parts:
+                    if '=' in part:
+                        k, v = part.split('=')
+                        metrics[f'test_{k}'] = float(v)
             elif 'METRICS' in line:
                 parts = line.replace('METRICS ', '').split()
                 for part in parts:
